@@ -3,9 +3,9 @@ ChatService — orchestrates the LangGraph agent and persists chat history.
 """
 from __future__ import annotations
 
-import json
 from typing import Optional
 
+from langchain_core.messages import HumanMessage, AIMessage
 from sqlalchemy.orm import Session
 
 from app.langgraph.agent import invoke_agent
@@ -19,24 +19,33 @@ class ChatService:
 
     def process_message(self, request) -> dict:
         """
-        1. Save user message to ChatHistory.
-        2. Invoke LangGraph agent (with DB so tools can persist).
-        3. Save assistant reply to ChatHistory.
-        4. Return structured response.
+        1. Load prior ChatHistory for this session (gives the agent memory).
+        2. Save the user message to ChatHistory.
+        3. Invoke LangGraph agent with full history + current message.
+        4. Save assistant reply to ChatHistory.
+        5. Return structured response.
         """
         interaction_id: Optional[int] = getattr(request, "interaction_id", None)
 
-        # ── 1. Save user message ──────────────────────────────────────────────
+        # ── 1. Load conversation history ──────────────────────────────────────
+        history = self._load_history(interaction_id)
+
+        # ── 2. Save user message ──────────────────────────────────────────────
         self._save_chat(
             interaction_id=interaction_id,
             role="user",
             message=request.message,
         )
 
-        # ── 2. Invoke agent ───────────────────────────────────────────────────
-        result = invoke_agent(request.message, db=self.db)
+        # ── 3. Invoke agent with full history + session ID ────────────────────
+        result = invoke_agent(
+            user_input=request.message,
+            db=self.db,
+            history=history,
+            interaction_id=interaction_id,
+        )
 
-        # ── 3. Detect which tools were called ────────────────────────────────
+        # ── 4. Detect which tools were called ─────────────────────────────────
         log_called = False
         edit_called = False
         for msg in result.get("messages", []):
@@ -47,22 +56,22 @@ class ChatService:
                 elif tool_name == "edit_interaction":
                     edit_called = True
 
-        # ── 4. Determine assistant message ───────────────────────────────────
+        # ── 5. Determine assistant message ────────────────────────────────────
         assistant_message = result["messages"][-1].content
         if log_called:
             assistant_message = "Interaction logged successfully."
         elif edit_called:
             assistant_message = "Interaction updated successfully."
 
-        # ── 5. Extract structured interaction data ───────────────────────────
+        # ── 6. Extract structured interaction data ────────────────────────────
         raw_data: Optional[dict] = result.get("interaction_data")
         result_interaction_id: Optional[int] = result.get("interaction_id")
 
-        # If log created a new record, pick up the ID from raw_data
+        # If log_interaction created a new record, get the ID from raw_data
         if raw_data and not result_interaction_id:
             result_interaction_id = raw_data.get("interaction_id")
 
-        # Use request's interaction_id as fallback for edit flows
+        # Fallback: keep the request's interaction_id (edit flows)
         if not result_interaction_id and interaction_id:
             result_interaction_id = interaction_id
 
@@ -88,7 +97,7 @@ class ChatService:
                 "follow_up": raw_data.get("follow_up"),
             }
 
-        # ── 6. Save assistant reply ───────────────────────────────────────────
+        # ── 7. Save assistant reply ───────────────────────────────────────────
         self._save_chat(
             interaction_id=result_interaction_id,
             role="assistant",
@@ -104,13 +113,41 @@ class ChatService:
 
     # ── private ───────────────────────────────────────────────────────────────
 
+    def _load_history(
+        self, interaction_id: Optional[int]
+    ) -> list:
+        """
+        Load previous ChatHistory rows for this interaction and convert them
+        to LangChain message objects so the LLM gets conversation context.
+
+        Limits to the last 20 messages to avoid exceeding token limits.
+        """
+        if not interaction_id:
+            return []
+
+        rows = (
+            self.db.query(ChatHistory)
+            .filter(ChatHistory.interaction_id == interaction_id)
+            .order_by(ChatHistory.id.asc())
+            .limit(20)
+            .all()
+        )
+
+        messages = []
+        for row in rows:
+            if row.role == "user":
+                messages.append(HumanMessage(content=row.message))
+            elif row.role == "assistant":
+                messages.append(AIMessage(content=row.message))
+        return messages
+
     def _save_chat(
         self,
         interaction_id: Optional[int],
         role: str,
         message: str,
     ) -> None:
-        """Persist a chat message to the ChatHistory table."""
+        """Persist a single chat message to the ChatHistory table."""
         try:
             entry = ChatHistory(
                 interaction_id=interaction_id,

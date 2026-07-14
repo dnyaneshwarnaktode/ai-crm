@@ -33,4 +33,10 @@ export async function getInteraction(interactionId: number) {
   return data;
 }
 
+export async function getInteractions() {
+  const { data } = await api.get('/interactions/');
+  return data;
+}
+
 export default api;
+

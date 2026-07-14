@@ -1,6 +1,5 @@
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import ForeignKey
+from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -11,8 +10,22 @@ class InteractionMaterial(Base):
 
     id = Column(Integer, primary_key=True)
 
-    interaction_id = Column(Integer,
-                            ForeignKey("interaction.id"))
+    interaction_id = Column(
+        Integer,
+        ForeignKey("interaction.id")
+    )
 
-    material_id = Column(Integer,
-                         ForeignKey("material.id"))
+    material_id = Column(
+        Integer,
+        ForeignKey("material.id")
+    )
+
+    interaction = relationship(
+        "Interaction",
+        back_populates="materials"
+    )
+
+    material = relationship(
+        "Material",
+        back_populates="interactions"
+    )

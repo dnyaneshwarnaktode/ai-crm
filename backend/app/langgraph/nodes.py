@@ -29,7 +29,8 @@ TOOLS = [
     suggest_follow_up,
 ]
 
-llm_with_tools = llm.bind_tools(TOOLS)
+llm_with_tools = llm.bind_tools(TOOLS, parallel_tool_calls=False)
+
 
 
 def assistant(state: dict, config: RunnableConfig = None) -> dict:
@@ -93,10 +94,31 @@ def assistant(state: dict, config: RunnableConfig = None) -> dict:
 
         cleaned_messages.append(new_msg)
 
+    # ── Build dynamic system prompt with active session context ─────────────
+    # Read interaction_id from config so the LLM knows the real integer ID
+    # and won't hallucinate placeholder strings when calling edit_interaction.
+    config_interaction_id = (
+        (config or {}).get("configurable", {}).get("interaction_id")
+    )
+    active_id = interaction_id or config_interaction_id
+
+    if active_id:
+        session_context = (
+            f"\n\nCRITICAL CONSTRAINTS FOR ACTIVE SESSION:\n"
+            f"1. There is an ACTIVE session in progress (Interaction ID: {active_id}).\n"
+            f"2. You MUST NOT call the `log_interaction` tool under any circumstance.\n"
+            f"3. Any new details, products, or changes provided by the user MUST be treated as updates to the current active interaction. You MUST call `edit_interaction` with `interaction_id={active_id}` to merge these changes.\n"
+            f"4. Do NOT create a new interaction."
+        )
+        system_content = SYSTEM_PROMPT + session_context
+    else:
+        system_content = SYSTEM_PROMPT
+
+
     # ── Invoke LLM ────────────────────────────────────────────────────────────
     response = llm_with_tools.invoke(
         [
-            SystemMessage(content=SYSTEM_PROMPT),
+            SystemMessage(content=system_content),
             *cleaned_messages,
         ],
         config=config,
@@ -105,5 +127,5 @@ def assistant(state: dict, config: RunnableConfig = None) -> dict:
     return {
         "messages": [response],
         "interaction_data": interaction_data,
-        "interaction_id": interaction_id,
+        "interaction_id": interaction_id or active_id,
     }

@@ -6,19 +6,12 @@ from app.langgraph.prompts import EXTRACTION_PROMPT
 
 
 def extract_interaction(text: str):
-    response = llm.invoke(
-        EXTRACTION_PROMPT + "\n\n" + text
+    # Enforce structured output matching the Pydantic schema directly via the LLM API
+    structured_llm = llm.with_structured_output(InteractionExtraction)
+    
+    # Use a simple prompt. The schema structure is already bound, so we don't need JSON formatting instructions.
+    validated = structured_llm.invoke(
+        f"Extract interaction details from the following user description:\n\n{text}"
     )
-
-    content = response.content.strip()
-
-    if content.startswith("```"):
-        content = content.replace("```json", "")
-        content = content.replace("```", "")
-        content = content.strip()
-
-    data = json.loads(content)
-
-    validated = InteractionExtraction.model_validate(data)
 
     return validated.model_dump()

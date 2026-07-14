@@ -1,6 +1,5 @@
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import ForeignKey
+from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -22,3 +21,13 @@ class InteractionSample(Base):
     )
 
     quantity = Column(Integer)
+
+    interaction = relationship(
+        "Interaction",
+        back_populates="samples"
+    )
+
+    sample = relationship(
+        "Sample",
+        back_populates="interactions"
+    )

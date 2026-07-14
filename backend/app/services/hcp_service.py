@@ -10,16 +10,13 @@ class HCPService:
         self.db = db
 
     def get_by_name(self, name: str):
-
+        from sqlalchemy import func
         return (
-
             self.db.query(HCP)
-
-            .filter(HCP.name == name)
-
+            .filter(func.lower(HCP.name) == name.lower())
             .first()
-
         )
+
 
     def create(self, name: str):
 

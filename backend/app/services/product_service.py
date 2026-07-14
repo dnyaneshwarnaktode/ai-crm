@@ -10,35 +10,23 @@ class ProductService:
         self.db = db
 
     def get_or_create(self, name: str):
-
+        from sqlalchemy import func
         product = (
-
             self.db.query(Product)
-
             .filter(
-
-                Product.product_name == name
-
+                func.lower(Product.product_name) == name.lower()
             )
-
             .first()
-
         )
 
         if product:
-
             return product
 
         product = Product(
-
             product_name=name
-
         )
 
         self.db.add(product)
-
         self.db.commit()
-
         self.db.refresh(product)
-
         return product

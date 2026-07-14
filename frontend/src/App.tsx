@@ -1,8 +1,50 @@
+import { useState, useEffect } from 'react'
 import './index.css'
 import { InteractionForm } from './components/InteractionForm'
 import { ChatPanel } from './components/ChatPanel'
+import { useAppDispatch, useAppSelector } from './store/hooks'
+import { loadChatHistory, clearChat } from './store/chatSlice'
+import { loadInteractionDetail, clearInteraction } from './store/interactionSlice'
+import { getInteractions } from './services/api'
+import { PlusCircle } from 'lucide-react'
+
+interface SimpleInteraction {
+  id: number;
+  hcp_name: string | null;
+  interaction_type: string | null;
+  interaction_date: string | null;
+}
 
 function App() {
+  const dispatch = useAppDispatch();
+  const activeId = useAppSelector((s) => s.interaction.interactionId);
+  const [sessions, setSessions] = useState<SimpleInteraction[]>([]);
+
+  // Fetch recent interactions/sessions
+  const fetchSessions = async () => {
+    try {
+      const data = await getInteractions();
+      setSessions(data);
+    } catch (err) {
+      console.error("Failed to fetch sessions", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+  }, [activeId]);
+
+  const handleSelectSession = (id: number) => {
+    if (!id) return;
+    dispatch(loadInteractionDetail(id));
+    dispatch(loadChatHistory(id));
+  };
+
+  const handleNewSession = () => {
+    dispatch(clearChat());
+    dispatch(clearInteraction());
+  };
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#0f1117]">
       {/* Top accent bar */}
@@ -21,11 +63,40 @@ function App() {
             <span className="text-xs text-slate-500 ml-2">HCP Interaction Logger</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs text-slate-400">Backend connected</span>
+
+        {/* Sessions Dropdown + Actions */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-400 font-medium whitespace-nowrap">Session:</label>
+            <select
+              value={activeId || ''}
+              onChange={(e) => handleSelectSession(Number(e.target.value))}
+              className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50"
+            >
+              <option value="">-- Active Conversation --</option>
+              {sessions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  #{s.id} - {s.hcp_name || 'Unknown HCP'} ({s.interaction_date || 'N/A'})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            onClick={handleNewSession}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/20 text-xs font-semibold transition-colors"
+          >
+            <PlusCircle size={14} />
+            New Logger
+          </button>
+
+          <div className="flex items-center gap-2 border-l border-slate-700/50 pl-4">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs text-slate-400">Backend connected</span>
+          </div>
         </div>
       </div>
+
 
       {/* Main split-screen layout */}
       <div className="flex w-full pt-[58px]">

@@ -50,7 +50,11 @@ export const ChatPanel: React.FC = () => {
           </div>
           <div>
             <h2 className="text-sm font-semibold text-slate-100">AI Assistant</h2>
-            <p className="text-xs text-slate-400">Powered by Groq · llama-3.3-70b</p>
+            <p className="text-xs text-slate-400">Powered by Groq · qwen-27b</p>
+
+
+
+
           </div>
         </div>
         {messages.length > 0 && (

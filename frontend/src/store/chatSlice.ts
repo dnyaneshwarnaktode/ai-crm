@@ -52,6 +52,31 @@ export const sendChatMessage = createAsyncThunk<
   },
 );
 
+export const loadChatHistory = createAsyncThunk<
+  ChatMessage[],
+  number,
+  { rejectValue: string }
+>(
+  'chat/loadHistory',
+  async (interactionId, { rejectWithValue }) => {
+    try {
+      const history = await getChatHistory(interactionId);
+      return history.map((m) => ({
+        id: `db-${m.id}`,
+        role: m.role as 'user' | 'assistant',
+        content: m.message,
+        timestamp: m.created_at,
+      }));
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.detail ||
+        err?.message ||
+        'Failed to load history';
+      return rejectWithValue(message);
+    }
+  },
+);
+
 // ── Slice ─────────────────────────────────────────────────────────────────────
 
 const chatSlice = createSlice({
@@ -90,6 +115,18 @@ const chatSlice = createSlice({
         });
       })
       .addCase(sendChatMessage.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload ?? 'Unknown error';
+      })
+      .addCase(loadChatHistory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(loadChatHistory.fulfilled, (state, action) => {
+        state.loading = false;
+        state.messages = action.payload;
+      })
+      .addCase(loadChatHistory.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload ?? 'Unknown error';
       });

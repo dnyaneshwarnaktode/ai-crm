@@ -53,6 +53,18 @@ class Interaction(Base):
         cascade="all, delete"
     )
 
+    materials = relationship(
+        "InteractionMaterial",
+        back_populates="interaction",
+        cascade="all, delete"
+    )
+
+    samples = relationship(
+        "InteractionSample",
+        back_populates="interaction",
+        cascade="all, delete"
+    )
+
     chats = relationship(
         "ChatHistory",
         cascade="all, delete"

@@ -38,9 +38,9 @@ app.include_router(hcp_router)
 app.include_router(interaction_router)
 app.include_router(chat_router)
 
-# ── Create tables ─────────────────────────────────────────────────────────────
+print("Creating database tables...")
 Base.metadata.create_all(bind=engine)
-
+print("Done creating tables.")
 
 @app.get("/")
 def root():

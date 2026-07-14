@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.models.interaction import Interaction
 from app.models.interaction_product import InteractionProduct
+from app.models.interaction_material import InteractionMaterial
+from app.models.interaction_sample import InteractionSample
 from app.models.product import Product
 
 router = APIRouter(
@@ -35,6 +37,8 @@ def get_interaction(
         .options(
             joinedload(Interaction.hcp),
             joinedload(Interaction.products).joinedload(InteractionProduct.product),
+            joinedload(Interaction.materials).joinedload(InteractionMaterial.material),
+            joinedload(Interaction.samples).joinedload(InteractionSample.sample),
         )
         .filter(Interaction.id == interaction_id)
         .first()
@@ -77,6 +81,16 @@ def _serialize(interaction: Interaction, full: bool = False) -> dict:
                 ip.product.product_name
                 for ip in (interaction.products or [])
                 if ip.product
+            ],
+            "materials_shared": [
+                im.material.material_name
+                for im in (interaction.materials or [])
+                if im.material
+            ],
+            "samples_distributed": [
+                is_.sample.sample_name
+                for is_ in (interaction.samples or [])
+                if is_.sample
             ],
         })
     return data
