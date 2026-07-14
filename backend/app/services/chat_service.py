@@ -57,11 +57,15 @@ class ChatService:
                     edit_called = True
 
         # ── 5. Determine assistant message ────────────────────────────────────
+        # Use the LLM's conversational response directly (so it can ask for missing fields)
         assistant_message = result["messages"][-1].content
-        if log_called:
-            assistant_message = "Interaction logged successfully."
-        elif edit_called:
-            assistant_message = "Interaction updated successfully."
+        if not assistant_message:
+            if log_called:
+                assistant_message = "Interaction logged successfully."
+            elif edit_called:
+                assistant_message = "Interaction updated successfully."
+            else:
+                assistant_message = "I have processed your request."
 
         # ── 6. Extract structured interaction data ────────────────────────────
         raw_data: Optional[dict] = result.get("interaction_data")
