@@ -11,7 +11,7 @@
 - 📋 **Auto-Populated Form** — Left panel updates in real-time from AI responses (read-only, never manually editable)
 - 🗄️ **PostgreSQL Persistence** — Every interaction, HCP, product, and chat message is saved to the database
 - 🔄 **Session Continuity** — Edit previous interactions by referencing the session ID
-- ⚡ **Groq Inference** — Ultra-fast LLM inference using `llama-3.3-70b-versatile`
+- ⚡ **Groq Inference** — Ultra-fast LLM inference using `qwen/qwen3.6-27b`
 
 ---
 
@@ -26,7 +26,8 @@
 | **Backend** | FastAPI + Uvicorn |
 | **Database** | PostgreSQL + SQLAlchemy 2 |
 | **AI Runtime** | LangGraph + LangChain |
-| **LLM** | Groq (`llama-3.3-70b-versatile`) |
+| **LLM** | Groq (`qwen/qwen3.6-27b`) |
+
 
 ---
 
@@ -329,8 +330,29 @@ InteractionForm re-renders with new data (read-only)
 **Product extraction:**
 > "Which products were discussed in our last meeting?"
 
+## 🗄️ Database CLI Verification
+
+If you are running the PostgreSQL CLI locally and want to verify the tables and records, remember that the tables are created inside the custom `ai_crm` database. 
+
+Use the following commands inside `psql`:
+
+```sql
+-- 1. Connect to the custom database
+\c ai_crm
+
+-- 2. List all tables
+\dt
+
+-- 3. Query logged products
+SELECT * FROM product;
+
+-- 4. Query logged interactions
+SELECT * FROM interaction;
+```
+
 ---
 
 ## 📄 License
 
 MIT License — feel free to use this project for learning or as a base for production applications.
+
