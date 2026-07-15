@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/(chat|interactions|hcp|chat/history)/:path*",
+      "destination": "https://ai-crm-backend.onrender.com/$1/:path*"
+    }
+  ]
+}

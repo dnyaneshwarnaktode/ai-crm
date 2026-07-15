@@ -3,11 +3,12 @@ import type { ChatApiResponse } from '../types';
 
 // Use relative URL — Vite proxy forwards to http://localhost:8000
 const api = axios.create({
-  baseURL: '/',
+  baseURL: import.meta.env.VITE_API_URL || '/',
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
 
 export interface SendMessagePayload {
   message: string;
