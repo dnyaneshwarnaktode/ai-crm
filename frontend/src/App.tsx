@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
+import { Sidebar } from './components/Sidebar'
+import { Dashboard } from './components/Dashboard'
+import { HcpDirectory } from './components/HcpDirectory'
+import { LogsHistory } from './components/LogsHistory'
 import { InteractionForm } from './components/InteractionForm'
 import { ChatPanel } from './components/ChatPanel'
 import { useAppDispatch, useAppSelector } from './store/hooks'
@@ -15,12 +20,11 @@ interface SimpleInteraction {
   interaction_date: string | null;
 }
 
-function App() {
+function InteractiveLogger() {
   const dispatch = useAppDispatch();
   const activeId = useAppSelector((s) => s.interaction.interactionId);
   const [sessions, setSessions] = useState<SimpleInteraction[]>([]);
 
-  // Fetch recent interactions/sessions
   const fetchSessions = async () => {
     try {
       const data = await getInteractions();
@@ -46,32 +50,20 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0f1117]">
-      {/* Top accent bar */}
-      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-600 via-indigo-500 to-teal-500 z-50" />
-
-      {/* Header */}
-      <div className="absolute top-0.5 left-0 right-0 h-14 flex items-center justify-between px-6 bg-slate-900/90 backdrop-blur-md border-b border-slate-700/50 z-40">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-              <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" />
-            </svg>
-          </div>
-          <div>
-            <span className="text-sm font-bold text-slate-100 tracking-tight">AI CRM</span>
-            <span className="text-xs text-slate-500 ml-2">HCP Interaction Logger</span>
-          </div>
+    <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+      {/* Logger Local Header */}
+      <div className="h-16 px-6 border-b border-slate-700/50 flex justify-between items-center bg-[#0f1117]/80 backdrop-blur-md">
+        <div>
+          <h2 className="text-sm font-bold text-slate-100">AI Meeting Chat Logger</h2>
+          <p className="text-[10px] text-slate-500 font-medium">Capture physician engagements dynamically via conversational NLP.</p>
         </div>
-
-        {/* Sessions Dropdown + Actions */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-400 font-medium whitespace-nowrap">Session:</label>
+            <label className="text-xs text-slate-400 font-medium whitespace-nowrap">Active Session:</label>
             <select
               value={activeId || ''}
               onChange={(e) => handleSelectSession(Number(e.target.value))}
-              className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50"
+              className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
             >
               <option value="">-- Active Conversation --</option>
               {sessions.map((s) => (
@@ -84,22 +76,16 @@ function App() {
 
           <button
             onClick={handleNewSession}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/20 text-xs font-semibold transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/20 text-xs font-semibold transition-colors"
           >
             <PlusCircle size={14} />
             New Logger
           </button>
-
-          <div className="flex items-center gap-2 border-l border-slate-700/50 pl-4">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-slate-400">Backend connected</span>
-          </div>
         </div>
       </div>
 
-
-      {/* Main split-screen layout */}
-      <div className="flex w-full pt-[58px]">
+      {/* Split screen content */}
+      <div className="flex flex-1 overflow-hidden">
         {/* Left Panel — Interaction Details Form */}
         <div className="w-1/2 border-r border-slate-700/50 flex flex-col overflow-hidden">
           <InteractionForm />
@@ -107,7 +93,7 @@ function App() {
 
         {/* Divider handle */}
         <div className="w-px bg-slate-700/50 relative">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-12 rounded-full bg-slate-600/50" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-14 rounded-full bg-slate-600/50" />
         </div>
 
         {/* Right Panel — AI Chat */}
@@ -116,7 +102,33 @@ function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <div className="flex h-screen w-screen overflow-hidden bg-[#0f1117]">
+        {/* Top accent bar */}
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-600 via-indigo-500 to-teal-500 z-50" />
+
+        {/* Left Sidebar Navigation */}
+        <Sidebar />
+
+        {/* Core Content Switching Port */}
+        <div className="flex-1 flex flex-col overflow-hidden h-full">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/hcp" element={<HcpDirectory />} />
+            <Route path="/logs" element={<LogsHistory />} />
+            <Route path="/logger" element={<InteractiveLogger />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </div>
+    </Router>
   )
 }
 
-export default App
+export default App;
+

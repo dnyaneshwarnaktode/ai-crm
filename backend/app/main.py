@@ -5,6 +5,8 @@ from app.core.database import Base, engine
 from app.routers.hcp import router as hcp_router
 from app.routers.interaction import router as interaction_router
 from app.routers.chat import router as chat_router
+from app.routers.analytics import router as analytics_router
+
 
 # Import all models so SQLAlchemy registers them before create_all
 from app.models import (
@@ -50,6 +52,8 @@ app.add_middleware(
 app.include_router(hcp_router)
 app.include_router(interaction_router)
 app.include_router(chat_router)
+app.include_router(analytics_router)
+
 
 print("Creating database tables...")
 Base.metadata.create_all(bind=engine)

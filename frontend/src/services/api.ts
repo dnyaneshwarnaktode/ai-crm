@@ -39,5 +39,28 @@ export async function getInteractions() {
   return data;
 }
 
+export async function getAnalytics() {
+  const { data } = await api.get('/analytics/');
+  return data;
+}
+
+export async function getHcps() {
+  const { data } = await api.get('/hcp/');
+  return data;
+}
+
+export async function createHcp(payload: {
+  name: string;
+  specialization?: string;
+  hospital?: string;
+  city?: string;
+  email?: string;
+  phone?: string;
+}) {
+  const { data } = await api.post('/hcp/', payload);
+  return data;
+}
+
 export default api;
+
 
