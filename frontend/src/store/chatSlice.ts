@@ -1,8 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { sendMessage } from '../services/api';
+import { sendMessage, getChatHistory } from '../services/api';
 import type { ChatMessage, ChatApiResponse } from '../types';
 import { setInteractionData, setInteractionId } from './interactionSlice';
+
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
